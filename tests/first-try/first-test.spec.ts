@@ -1,4 +1,4 @@
-import { test, expect ,defineConfig ,devices} from '@playwright/test';
+import { test, expect, defineConfig, devices } from '@playwright/test';
 import { checkLoginStatus } from './csdn-cookie-test.spec.ts';
 
 
@@ -6,34 +6,34 @@ import { checkLoginStatus } from './csdn-cookie-test.spec.ts';
 
 test('测试网页抓取和截图内容', async ({ page }) => {
 
-    const cookies = require('../csdn-cookies.json');
-await page.context().addCookies(cookies);
-    await page.goto('http://csdn.net');
-    // await page.click('#toolbar-btn-loginfun');
-    console.log('检查登录状态...');
-    // const userElement = page.locator('.hasAvatar, .user-name');
-    if (await checkLoginStatus(page)) {
-      console.log('✅ 已登录状态');
+  const cookies = require('../csdn-cookies.json');
+  await page.context().addCookies(cookies);
+  await page.goto('http://csdn.net');
+  // await page.click('#toolbar-btn-loginfun');
+  console.log('检查登录状态...');
+  // const userElement = page.locator('.hasAvatar, .user-name');
+  if (await checkLoginStatus(page)) {
+    console.log('✅ 已登录状态');
 
-      console.log('开始定位搜索框');
-      const searchbox = page.locator('#toolbar-search-input');
-      await searchbox.fill('2026测试趋势');
-      await page.click('button[id="toolbar-search-button"]');
-  
-      console.log("已经查询出来结果");
-  
-      await page.waitForLoadState('networkidle');
-  
-      await page.screenshot({
-          path: 'screenshot/view.png',
-          fullPage: true
-      });
+    console.log('开始定位搜索框');
+    const searchbox = page.locator('#toolbar-search-input');
+    await searchbox.fill('2026测试趋势');
+    await page.click('button[id="toolbar-search-button"]');
 
-    } else {
-      console.log('❌ 未登录状态');
-    }
+    console.log("已经查询出来结果");
 
-    
+    await page.waitForLoadState('networkidle');
+
+    await page.screenshot({
+      path: 'screenshot/view.png',
+      fullPage: true
+    });
+
+  } else {
+    console.log('❌ 未登录状态');
+  }
+
+
 
 });
 

@@ -1,0 +1,168 @@
+import { test, expect, devices } from '@playwright/test';
+import { resolve } from 'dns';
+import { snapshot } from 'node:test';
+import * as readline from 'readline';
+
+
+test.use({
+    ...devices['iPhone 13'],
+});
+
+
+async function waitForVerificationCode(): Promise<string> {
+    return new Promise((resolve) => {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        rl.question('请输入验证码', (code) => {
+            rl.close;
+            resolve(code.trim());
+        });
+    });
+}
+
+
+async function waitForManualOperation(message: string = '请完成操作'): Promise<void> {
+    return new Promise((resolve) => {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        console.log(`\n🛑 ${message}`);
+        console.log('   完成后按 Enter 键继续...');
+
+        rl.question('', () => {
+            rl.close();
+            resolve();
+        });
+    })
+}
+
+
+async function clickVerificationCodeButton(page) {
+    console.log('🔄 尝试点击获取验证码按钮...');
+    
+    // 方法1：正常的 Playwright 点击（首选）
+    try {
+        const button = page.locator('iframe').contentFrame().getByRole('button', { name: '获取验证码' });
+        await button.waitFor({ state: 'visible', timeout: 5000 });
+        await button.click();
+        console.log('✅ 方法1：正常点击成功');
+        return true;
+    } catch (error) {
+        console.log('⚠️ 方法1失败:', error.message);
+    }
+    try {
+        const button = page.locator('iframe').contentFrame().getByText('获取验证码');
+        await button.click();
+        console.log('✅ 方法2：文本定位点击成功');
+        return true;
+    } catch (error) {
+        console.log('⚠️ 方法2失败:', error.message);
+    }
+    
+    // 方法3：使用 JavaScript 点击
+    try {
+        const clicked = await page.evaluate(() => {
+            const iframe = document.querySelector('iframe');
+            if (!iframe) return false;
+            
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const buttons = iframeDoc.querySelectorAll('button, div[role="button"]');
+            
+            for (const button of buttons) {
+                if (button.textContent?.includes('获取验证码') || 
+                    button.getAttribute('name')?.includes('验证码')) {
+                    button.click();
+                    return true;
+                }
+            }
+            return false;
+        });
+        
+        if (clicked) {
+            console.log('✅ 方法3：JavaScript点击成功');
+            return true;
+        }
+    } catch (error) {
+        console.log('⚠️ 方法3失败:', error.message);
+    }
+    
+    console.log('❌ 所有点击方法都失败了');
+    return false;
+}
+    const clicked = await clickVerificationCodeButton(page);
+
+    if (clicked) {
+        // 等待短信发送（给一些时间）
+        await page.waitForTimeout(2000);
+        
+        // 检查页面状态
+        const currentUrl = page.url();
+        console.log('📋 当前URL:', currentUrl);
+        
+        if (currentUrl.includes('blank') || !currentUrl.includes('taobao.com')) {
+            console.log('⚠️ 页面跳转到非预期地址');
+            await page.screenshot({ path: 'unexpected-navigation.png' });
+            
+            // 尝试回到淘宝
+            await page.goto('https://main.m.taobao.com/');
+            await page.waitForTimeout(1000);
+        }
+        
+        console.log('🎯 准备输入验证码...');
+        // 继续你的验证码输入逻辑
+    } else {
+        console.log('🚫 无法点击验证码按钮，测试终止');
+        // 可以在这里截图或保存状态供分析
+        await page.screenshot({ path: 'verification-button-failed.png', fullPage: true });
+    }
+
+    
+
+test('test', async ({ page, context }) => {
+
+    await page.goto('https://main.m.taobao.com/?sprefer=sypc00');
+
+    const iframeElement = page.frameLocator('iframe').first();
+
+
+    await page.getByText('寻找宝贝店铺搜索').click();
+    await page.locator('iframe').contentFrame().getByRole('textbox', { name: '请输入手机号' }).click();
+    await page.locator('iframe').contentFrame().getByRole('textbox', { name: '请输入手机号' }).fill('16601112688');
+    await page.locator('iframe').contentFrame().locator('label').filter({ hasText: /已阅读并同意以下协议/ }).click();
+    
+    const clicked = await clickVerificationCodeButton(page);
+    if (!clicked) {
+        // 处理失败情况
+    }
+    console.log('\n⏳ 等待验证码...');
+    console.log('   请查看手机短信，然后输入验证码');
+
+    const verificationCode = await waitForVerificationCode();
+    console.log(`✅ 输入的验证码: ${verificationCode}`);
+
+    console.log('⌨️ 正在输入验证码...');
+    await iframeElement.locator('.view-input').first().click();
+    await iframeElement.getByRole('textbox').fill(verificationCode);
+    console.log('✅ 验证码已输入');
+    // await page.locator('iframe').contentFrame().locator('.view-input').first().click();
+    // await page.locator('iframe').contentFrame().getByRole('textbox').fill('3756');
+    await page.getByText('星星人系列泡泡玛特').click();
+    await page.getByRole('link', { name: '泡泡玛特星星人联名马克杯创意奶油胶陶瓷杯子送女生闺蜜手工礼物 ¥ 191. 00 100+人付款' }).click();
+    await page.getByText('打开淘宝').click();
+    await page.getByText('打开淘宝').click();
+    await page.goto('https://main.m.taobao.com/search/index.html?spm=a215s.7406091.topbar.1.560c6770t1leU1&pageType=3&q=%E6%98%9F%E6%98%9F%E4%BA%BA%E7%B3%BB%E5%88%97%E6%B3%A1%E6%B3%A1%E7%8E%9B%E7%89%B9');
+    await page.getByRole('textbox').click();
+    await page.getByRole('textbox').click();
+    await page.getByRole('textbox').fill('mkxk');
+    await page.getByText('麦馨咖啡').click();
+    await page.getByRole('link', { name: '麦馨maxim韩国原装进口摩卡三合一速溶咖啡1.' }).click();
+
+
+    // await context.tracing.stop({
+    //     path: '../trace.zip'
+    // });
+});
