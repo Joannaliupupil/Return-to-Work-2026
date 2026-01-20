@@ -12,6 +12,6 @@ export class DoubanSearchResultsPage {
   }
 
   async getFirstResultTitle() {
-    return await this.page.getByText('%流浪地球%').textContent();
+    return await this.page.getByText('流浪地球').textContent();
   }
 }
