@@ -1,0 +1,5 @@
+[
+    { "keyword": "Playwright", "expected": "Fast and reliable" },
+    { "keyword": "Cypress", "expected": "Front end testing" },
+    { "keyword": "Selenium", "expected": "Web browser automation" }
+  ]

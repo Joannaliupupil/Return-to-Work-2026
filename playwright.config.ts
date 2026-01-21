@@ -23,6 +23,11 @@ export default defineConfig({
         {
             name:'chromium',
             use:{...devices['Desktop Chrome']},
+            dependencies: ['setup'],
         },
+        {
+            name: 'setup',
+            testMatch: /global-setup\.ts/, // 匹配你的文件名
+          },
     ],
 });
